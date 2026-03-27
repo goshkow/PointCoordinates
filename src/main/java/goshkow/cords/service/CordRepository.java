@@ -316,10 +316,6 @@ public final class CordRepository {
         if (entry == null || tags == null || tags.isEmpty()) {
             return entry;
         }
-        if (!entry.publicEntry()) {
-            actor.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.tags_only_public"));
-            return null;
-        }
         if (!canEditTags(actor, entry)) {
             actor.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.rename_denied"));
             return null;
@@ -350,10 +346,6 @@ public final class CordRepository {
     public static CordEntry removeTags(Player actor, CordEntry entry, List<String> tags) {
         if (entry == null || tags == null || tags.isEmpty()) {
             return entry;
-        }
-        if (!entry.publicEntry()) {
-            actor.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.tags_only_public"));
-            return null;
         }
         if (!canEditTags(actor, entry)) {
             actor.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.rename_denied"));
@@ -396,9 +388,6 @@ public final class CordRepository {
 
         ArrayList<CordEntry> results = new ArrayList<>();
         for (CordEntry entry : listVisibleEntries(viewerId)) {
-            if (!entry.publicEntry()) {
-                continue;
-            }
             boolean matches = true;
             for (String needle : needles) {
                 if (!entry.tags().contains(needle)) {
@@ -651,7 +640,7 @@ public final class CordRepository {
                 storage.set(base + ".z", location.getZ());
                 storage.set(base + ".pitch", location.getPitch());
                 storage.set(base + ".yaw", location.getYaw());
-                if (entry.publicEntry() && !entry.tags().isEmpty()) {
+                if (!entry.tags().isEmpty()) {
                     storage.set(base + ".tags", new ArrayList<>(entry.tags()));
                 } else {
                     storage.set(base + ".tags", null);

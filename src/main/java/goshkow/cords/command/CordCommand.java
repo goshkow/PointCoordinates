@@ -354,28 +354,58 @@ public final class CordCommand implements TabExecutor {
                 }
 
                 String adminTagAction = args.length >= 4 ? resolveCommandWord(args[3], "add", "remove") : null;
-                if (args.length == 5 && "tag".equals(adminAction) && ("add".equals(adminTagAction) || "remove".equals(adminTagAction))) {
+                if (args.length == 5 && "tag".equals(adminAction)) {
+                    ArrayList<String> completions = new ArrayList<>();
+                    ArrayList<String> actions = new ArrayList<>();
+                    actions.add(displayCommandWord("add"));
+                    actions.add(displayCommandWord("remove"));
+                    StringUtil.copyPartialMatches(args[4], actions, completions);
+                    return completions;
+                }
+                if (args.length >= 6 && "tag".equals(adminAction) && ("add".equals(adminTagAction) || "remove".equals(adminTagAction))) {
                     if (!tagsEnabled) {
                         return List.of();
                     }
+                    UUID ownerId = resolvePlayerId(args[1]);
+                    if (ownerId == null) {
+                        return List.of();
+                    }
+                    CordEntry entry = CordRepository.findOwnedMarker(ownerId, args[3]);
+                    if (entry == null) {
+                        return List.of();
+                    }
                     ArrayList<String> completions = new ArrayList<>();
-                    StringUtil.copyPartialMatches(args[4], CordRepository.allowedPublicTags(), completions);
+                    List<String> source = "remove".equals(adminTagAction) ? entry.tags() : CordRepository.allowedPublicTags();
+                    StringUtil.copyPartialMatches(args[args.length - 1], source, completions);
                     return completions;
                 }
             } else {
                 if (args.length == 3 && ("name".equals(localAction) || "move".equals(localAction) || "tag".equals(localAction))) {
                     ArrayList<String> completions = new ArrayList<>();
-                    StringUtil.copyPartialMatches(args[2], CordRepository.listPersonal(player.getUniqueId()), completions);
+                    StringUtil.copyPartialMatches(args[2], CordRepository.listOwned(player.getUniqueId()), completions);
                     return completions;
                 }
 
                 String localTagAction = args.length >= 3 ? resolveCommandWord(args[2], "add", "remove") : null;
-                if (args.length == 4 && "tag".equals(localAction) && ("add".equals(localTagAction) || "remove".equals(localTagAction))) {
+                if (args.length == 4 && "tag".equals(localAction)) {
+                    ArrayList<String> completions = new ArrayList<>();
+                    ArrayList<String> actions = new ArrayList<>();
+                    actions.add(displayCommandWord("add"));
+                    actions.add(displayCommandWord("remove"));
+                    StringUtil.copyPartialMatches(args[3], actions, completions);
+                    return completions;
+                }
+                if (args.length >= 5 && "tag".equals(localAction) && ("add".equals(localTagAction) || "remove".equals(localTagAction))) {
                     if (!tagsEnabled) {
                         return List.of();
                     }
+                    CordEntry entry = CordRepository.findOwnedMarker(player.getUniqueId(), args[2]);
+                    if (entry == null) {
+                        return List.of();
+                    }
                     ArrayList<String> completions = new ArrayList<>();
-                    StringUtil.copyPartialMatches(args[3], CordRepository.allowedPublicTags(), completions);
+                    List<String> source = "remove".equals(localTagAction) ? entry.tags() : CordRepository.allowedPublicTags();
+                    StringUtil.copyPartialMatches(args[args.length - 1], source, completions);
                     return completions;
                 }
             }

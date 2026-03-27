@@ -17,6 +17,8 @@ commands:
     pt: true                          # Register /pt alias.
   localization: false                # Translate command labels in help, usage, and tab-complete.
   root_default_action: help          # What /pcords and enabled aliases do without arguments: help or list.
+updates:
+  notification: true                 # Notify admins with reload access when a new stable version is available.
 lists:
   default_mode: owned                 # Default mode for /cords list with no arguments: private, owned, open, all to use default list argument or usage to send "Usage:..." message.
 
@@ -52,8 +54,8 @@ labels:
     max_name_length: 10               # Maximum marker name length.
     show_extra_info: false            # Show created time, pitch, and yaw in info.
     tags:
-      enabled: true                   # Allow tags on public markers.
-      allowed: [spawn, shop, pvp, farm, mine] # Allowed public tags.
+      enabled: true                   # Allow tags on markers.
+      allowed: [spawn, shop, pvp, farm, mine] # Allowed marker tags.
 
 integrations:
   vault:                              # Vault integration.

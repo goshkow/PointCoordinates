@@ -63,8 +63,15 @@ public final class InfoPresenter {
         root.addExtra(worldLine);
         root.addExtra(typeLine);
 
-        if (entry.publicEntry() && !entry.tags().isEmpty()) {
-            root.addExtra(new TextComponent("\n" + LanguagePack.translate("messages.tags") + " " + ChatColor.WHITE + String.join(", ", entry.tags())));
+        if (!entry.tags().isEmpty()) {
+            StringBuilder renderedTags = new StringBuilder();
+            for (String tag : entry.tags()) {
+                if (!renderedTags.isEmpty()) {
+                    renderedTags.append(" ");
+                }
+                renderedTags.append("[").append(tag).append("]");
+            }
+            root.addExtra(new TextComponent("\n" + LanguagePack.translate("messages.tags") + " " + ChatColor.WHITE + renderedTags));
         }
 
         if (entry.publicEntry()) {

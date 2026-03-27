@@ -1,5 +1,5 @@
 name: PointCoordinates
-version: '1.0.0'
+version: '1.0.2'
 main: goshkow.cords.CordsPlugin
 api-version: '1.21'
 softdepend:
@@ -58,7 +58,7 @@ permissions:
     description: Allows searching markers by name
     default: true
   cords.search.tag:
-    description: Allows searching public markers by tags
+    description: Allows searching markers by tags
     default: true
   cords.edit.name:
     description: Allows renaming your own markers
@@ -73,10 +73,10 @@ permissions:
     description: Allows moving other players' markers
     default: op
   cords.edit.tag:
-    description: Allows editing tags on your own public markers
+    description: Allows editing tags on your own markers
     default: true
   cords.edit.tag.others:
-    description: Allows editing tags on other players' public markers
+    description: Allows editing tags on other players' markers
     default: op
   cords.remove:
     description: Allows removing your own markers

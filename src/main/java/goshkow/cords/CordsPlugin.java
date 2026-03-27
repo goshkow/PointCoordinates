@@ -9,6 +9,7 @@ import goshkow.cords.service.CordRepository;
 import goshkow.cords.service.ConfirmationService;
 import goshkow.cords.service.LanguagePack;
 import goshkow.cords.service.TeleportService;
+import goshkow.cords.service.UpdateService;
 import goshkow.cords.util.ColorUtil;
 import goshkow.cords.util.CordLogger;
 import org.bukkit.Bukkit;
@@ -21,6 +22,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -73,8 +75,14 @@ public final class CordsPlugin extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
         refreshIntegrations();
+        UpdateService.checkAsync();
 
         logger.info(LanguagePack.translate("messages.ready") + " (" + (System.currentTimeMillis() - startupTime) + "ms)");
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Bukkit.getScheduler().runTaskLater(this, () -> UpdateService.notifyIfNeeded(event.getPlayer()), 40L);
     }
 
     @EventHandler
@@ -136,6 +144,7 @@ public final class CordsPlugin extends JavaPlugin implements Listener {
         reloadMapIntegrations();
         refreshAliasCommands();
         refreshIntegrations();
+        UpdateService.checkAsync();
     }
 
     private void prepareFiles() {
