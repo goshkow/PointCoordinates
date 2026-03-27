@@ -34,7 +34,9 @@ public final class InfoPresenter {
         TextComponent root = new TextComponent((fromList ? "\n" : "") + CordsPlugin.getPrefix() + LanguagePack.translate("messages.info_title") + " " + nameColor + entry.name() + ChatColor.RESET + ":");
 
         Location location = entry.location();
-        String coordinates = Math.floor(location.getX()) + ", " + Math.floor(location.getY()) + ", " + Math.floor(location.getZ());
+        String coordinates = PlaceholderResolver.formatCoordinate(location.getX()) + ", "
+                + PlaceholderResolver.formatCoordinate(location.getY()) + ", "
+                + PlaceholderResolver.formatCoordinate(location.getZ());
 
         TextComponent coordinateLine = new TextComponent("\n" + LanguagePack.translate("messages.coordinates") + " " + ChatColor.UNDERLINE + coordinates + ChatColor.RESET);
         coordinateLine.setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, coordinates));
@@ -54,8 +56,8 @@ public final class InfoPresenter {
         TextComponent typeLine = new TextComponent("\n" + LanguagePack.translate("messages.scope") + " " + (entry.publicEntry()
                 ? LanguagePack.translate("messages.scope_public")
                 : LanguagePack.translate("messages.scope_personal")));
-        TextComponent pitchLine = new TextComponent("\n" + LanguagePack.translate("messages.pitch") + " " + location.getPitch());
-        TextComponent yawLine = new TextComponent("\n" + LanguagePack.translate("messages.yaw") + " " + location.getYaw());
+        TextComponent pitchLine = new TextComponent("\n" + LanguagePack.translate("messages.pitch") + " " + PlaceholderResolver.formatCoordinate(location.getPitch()));
+        TextComponent yawLine = new TextComponent("\n" + LanguagePack.translate("messages.yaw") + " " + PlaceholderResolver.formatCoordinate(location.getYaw()));
 
         root.addExtra(coordinateLine);
         root.addExtra(worldLine);
@@ -93,7 +95,7 @@ public final class InfoPresenter {
     }
 
     private boolean teleportAllowed(Player player, CordEntry entry) {
-        return TeleportService.canTeleport(player, entry);
+        return TeleportService.canShowTeleportAction(player, entry);
     }
 
     private String scopePath(boolean publicEntry) {

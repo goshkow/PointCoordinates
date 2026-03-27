@@ -30,6 +30,9 @@ permissions:
   cords.teleport.owned:
     description: Allows teleporting to your own markers even when scope-specific teleport is denied
     default: false
+  cords.teleport.bypass_disabled:
+    description: Allows teleporting even when teleportation is disabled in config for that marker type
+    default: false
   cords.teleport.bypass_cooldown:
     description: Allows bypassing teleport cooldowns
     default: false

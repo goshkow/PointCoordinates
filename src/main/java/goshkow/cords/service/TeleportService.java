@@ -41,11 +41,6 @@ public final class TeleportService {
         }
 
         String scopePath = entry.publicEntry() ? "labels.public" : "labels.personal";
-        if (!CordsPlugin.getInstance().getConfig().getBoolean(scopePath + ".teleport_enabled", !entry.publicEntry())) {
-            player.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate(
-                    entry.publicEntry() ? "messages.teleport_disabled_public" : "messages.teleport_disabled_personal"));
-            return;
-        }
 
         UUID playerId = player.getUniqueId();
         if (teleporting.contains(playerId)) {
@@ -255,8 +250,30 @@ public final class TeleportService {
         }
 
         String scopePath = entry.publicEntry() ? "labels.public" : "labels.personal";
+        if (!CordsPlugin.getInstance().getConfig().getBoolean(scopePath + ".teleport_enabled", !entry.publicEntry())
+                && !PermissionGate.has(player, "cords.teleport.bypass_disabled")) {
+            return false;
+        }
+
+        return PermissionGate.has(
+                player,
+                entry.publicEntry() ? "cords.teleport.public" : "cords.teleport.personal"
+        );
+    }
+
+    public static boolean canShowTeleportAction(Player player, CordEntry entry) {
+        if (player == null || entry == null) {
+            return false;
+        }
+
+        String scopePath = entry.publicEntry() ? "labels.public" : "labels.personal";
         if (!CordsPlugin.getInstance().getConfig().getBoolean(scopePath + ".teleport_enabled", !entry.publicEntry())) {
             return false;
+        }
+
+        boolean ownsMarker = entry.ownerId() != null && entry.ownerId().equals(player.getUniqueId());
+        if (ownsMarker && PermissionGate.has(player, "cords.teleport.owned")) {
+            return true;
         }
 
         return PermissionGate.has(
