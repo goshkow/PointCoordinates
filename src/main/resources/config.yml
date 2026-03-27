@@ -1,0 +1,87 @@
+# ############################
+#      PointCoordinates
+# ############################
+# by goshkow
+
+# Core settings.
+style:
+  accent_color: "&#4B86B5"            # Main accent color used for titles and command highlights.
+prefix: "%accent%PCords &8> &f"      # Chat prefix.
+language: en_us                       # Loaded language file.
+sounds: true                          # Global sound feedback.
+debug: false                          # Extra console logs.
+commands:
+  aliases:
+    cords: true                       # Register /cords alias.
+    pc: true                          # Register /pc alias.
+    pt: true                          # Register /pt alias.
+  localization: false                # Translate command labels in help, usage, and tab-complete.
+  root_default_action: help          # What /pcords and enabled aliases do without arguments: help or list.
+lists:
+  default_mode: owned                 # Default mode for /cords list with no arguments: private, owned, open, all to use default list argument or usage to send "Usage:..." message.
+
+labels:
+  personal:                           # Personal markers.
+    enabled: true                     # Enable personal markers.
+    teleport_enabled: true            # Allow teleporting to personal markers.
+    teleport_cooldown: 10             # Cooldown in seconds.
+    teleport_action_type: action      # action bar or chat message.
+    teleport_sound:
+      enabled: false                  # Announce successful teleports nearby.
+      sound: ENTITY_ENDERMAN_TELEPORT  # Announcement sound.
+      volume: 1.0                     # Base loudness.
+      pitch: 1.0                      # Sound pitch.
+      radius: 32.0                    # Max audible distance in blocks.
+    max_per_player: 5                 # Maximum markers per player.
+    max_name_length: 10               # Maximum marker name length.
+    show_extra_info: false            # Show created time, pitch, and yaw in info.
+
+  public:                             # Public markers.
+    enabled: true                     # Enable public markers.
+    teleport_enabled: false           # Allow teleporting to public markers.
+    teleport_cooldown: 10             # Cooldown in seconds.
+    same_timeout_as_personal: false   # Share the personal cooldown.
+    teleport_action_type: action      # action bar or chat message.
+    teleport_sound:
+      enabled: false                  # Announce successful teleports nearby.
+      sound: ENTITY_ENDERMAN_TELEPORT  # Announcement sound.
+      volume: 1.0                     # Base loudness.
+      pitch: 1.0                      # Sound pitch.
+      radius: 32.0                    # Max audible distance in blocks.
+    max_per_player: 1                 # Maximum markers per player.
+    max_name_length: 10               # Maximum marker name length.
+    show_extra_info: false            # Show created time, pitch, and yaw in info.
+    tags:
+      enabled: true                   # Allow tags on public markers.
+      allowed: [spawn, shop, pvp, farm, mine] # Allowed public tags.
+
+integrations:
+  vault:                              # Vault integration.
+    enabled: false                    # Enable Vault.
+    charge_amount: 5                  # Teleport charge amount.
+
+  combatlogx:                         # CombatLogX integration.
+    enabled: false                    # Enable CombatLogX.
+    combat:
+      set: false                      # Block marker creation in combat.
+      teleport: false                 # Block teleporting in combat.
+
+  maps:                               # Map plugin integrations.
+    dynmap:
+      enabled: false                  # Master switch for Dynmap sync.
+      personal:
+        enabled: false                # Sync personal markers to Dynmap.
+        icon: default                 # Dynmap marker icon id.
+        label: "PointCoordinates"     # Dynmap marker set label.
+      public:
+        enabled: false                # Sync public markers to Dynmap.
+        icon: default                 # Dynmap marker icon id.
+        label: "PointCoordinates"     # Dynmap marker set label.
+    bluemap:
+      enabled: false                  # Master switch for BlueMap sync.
+      personal:
+        enabled: false                # Sync personal markers to BlueMap.
+        label: "PointCoordinates"     # BlueMap marker set label.
+      public:
+        enabled: false                # Sync public markers to BlueMap.
+        label: "PointCoordinates"     # BlueMap marker set label.

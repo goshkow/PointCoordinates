@@ -1,0 +1,86 @@
+name: PointCoordinates
+version: '1.0.0'
+main: goshkow.cords.CordsPlugin
+api-version: '1.21'
+softdepend:
+  - Vault
+  - CombatLogX
+  - dynmap
+  - BlueMap
+commands:
+  pcords:
+    description: Main PointCoordinates command
+    permission: cords.use
+permissions:
+  cords.use:
+    description: Allows using the /cords command
+    default: true
+  cords.add:
+    description: Allows creating personal markers
+    default: true
+  cords.open:
+    description: Allows creating public markers or promoting a personal marker to public
+    default: false
+  cords.teleport.personal:
+    description: Allows teleporting to personal markers
+    default: false
+  cords.teleport.public:
+    description: Allows teleporting to public markers
+    default: false
+  cords.teleport.owned:
+    description: Allows teleporting to your own markers even when scope-specific teleport is denied
+    default: false
+  cords.teleport.bypass_cooldown:
+    description: Allows bypassing teleport cooldowns
+    default: false
+  cords.list:
+    description: Allows using the /cords list command
+    default: true
+  cords.list.private:
+    description: Allows viewing private markers in /cords list
+    default: true
+  cords.list.owned:
+    description: Allows viewing owned markers in /cords list
+    default: true
+  cords.list.open:
+    description: Allows viewing open markers in /cords list
+    default: true
+  cords.list.all:
+    description: Allows viewing all available markers in /cords list
+    default: true
+  cords.info:
+    description: Allows using the /cords info command
+    default: true
+  cords.search.name:
+    description: Allows searching markers by name
+    default: true
+  cords.search.tag:
+    description: Allows searching public markers by tags
+    default: true
+  cords.edit.name:
+    description: Allows renaming your own markers
+    default: true
+  cords.edit.name.others:
+    description: Allows renaming other players' markers
+    default: op
+  cords.edit.move:
+    description: Allows moving your own markers
+    default: true
+  cords.edit.move.others:
+    description: Allows moving other players' markers
+    default: op
+  cords.edit.tag:
+    description: Allows editing tags on your own public markers
+    default: true
+  cords.edit.tag.others:
+    description: Allows editing tags on other players' public markers
+    default: op
+  cords.remove:
+    description: Allows removing your own markers
+    default: true
+  cords.remove.others:
+    description: Allows removing other players' markers
+    default: op
+  cords.reload:
+    description: Allows using the /cords reload command
+    default: op
