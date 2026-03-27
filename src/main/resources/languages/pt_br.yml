@@ -105,6 +105,7 @@ commands:
   personal_renamed: 'Marcador "%marker_name%" renomeado para "%new_name%".'
   public_renamed: 'Marcador publico "%marker_name%" renomeado para "%new_name%".'
   marker_moved: 'Marcador "%marker_name%" movido de %from% para %to%.'
+  tags_updated: 'As tags do marcador "%marker_name%" foram atualizadas: %tags%.'
   action_open: "criar um marcador publico"
   action_promote_public: "tornar este marcador publico"
   action_remove: "remover este marcador"

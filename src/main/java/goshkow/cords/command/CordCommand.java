@@ -260,7 +260,10 @@ public final class CordCommand implements TabExecutor {
             if ("remove".equals(rootAction) && canRemoveOthers(player)) {
                 StringUtil.copyPartialMatches(args[1], getKnownPlayerNames(), completions);
             } else {
-                StringUtil.copyPartialMatches(args[1], CordRepository.listOwned(player.getUniqueId()), completions);
+                List<String> markers = ("tp".equals(rootAction) || "info".equals(rootAction))
+                        ? CordRepository.listVisible(player.getUniqueId())
+                        : CordRepository.listOwned(player.getUniqueId());
+                StringUtil.copyPartialMatches(args[1], markers, completions);
             }
             return completions;
         }
@@ -277,7 +280,7 @@ public final class CordCommand implements TabExecutor {
 
         String searchMode = args.length >= 2 ? resolveCommandWord(args[1], "name", "tag") : null;
         if (args.length >= 3 && "search".equals(rootAction) && "tag".equals(searchMode)) {
-            if (!CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true)) {
+            if (!CordRepository.tagsEnabled()) {
                 return List.of();
             }
 
@@ -296,7 +299,7 @@ public final class CordCommand implements TabExecutor {
 
             ArrayList<String> completions = new ArrayList<>();
             ArrayList<String> availableTags = new ArrayList<>();
-            for (String tag : CordRepository.allowedPublicTags()) {
+            for (String tag : CordRepository.allowedTags()) {
                 if (!usedTags.contains(tag.toLowerCase(java.util.Locale.ROOT))) {
                     availableTags.add(tag);
                 }
@@ -306,7 +309,7 @@ public final class CordCommand implements TabExecutor {
         }
 
         if ("edit".equals(rootAction)) {
-            boolean tagsEnabled = CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true);
+            boolean tagsEnabled = CordRepository.tagsEnabled();
             boolean adminMode = args.length >= 2 && resolvePlayerId(args[1]) != null && canEditAnythingOnOthers(player);
             String localAction = args.length >= 2 ? resolveCommandWord(args[1], "name", "move", "tag") : null;
 
@@ -353,7 +356,7 @@ public final class CordCommand implements TabExecutor {
                     return completions;
                 }
 
-                String adminTagAction = args.length >= 4 ? resolveCommandWord(args[3], "add", "remove") : null;
+                String adminTagAction = args.length >= 5 ? resolveCommandWord(args[4], "add", "remove") : null;
                 if (args.length == 5 && "tag".equals(adminAction)) {
                     ArrayList<String> completions = new ArrayList<>();
                     ArrayList<String> actions = new ArrayList<>();
@@ -375,7 +378,7 @@ public final class CordCommand implements TabExecutor {
                         return List.of();
                     }
                     ArrayList<String> completions = new ArrayList<>();
-                    List<String> source = "remove".equals(adminTagAction) ? entry.tags() : CordRepository.allowedPublicTags();
+                    List<String> source = "remove".equals(adminTagAction) ? entry.tags() : CordRepository.allowedTags();
                     StringUtil.copyPartialMatches(args[args.length - 1], source, completions);
                     return completions;
                 }
@@ -386,7 +389,7 @@ public final class CordCommand implements TabExecutor {
                     return completions;
                 }
 
-                String localTagAction = args.length >= 3 ? resolveCommandWord(args[2], "add", "remove") : null;
+                String localTagAction = args.length >= 4 ? resolveCommandWord(args[3], "add", "remove") : null;
                 if (args.length == 4 && "tag".equals(localAction)) {
                     ArrayList<String> completions = new ArrayList<>();
                     ArrayList<String> actions = new ArrayList<>();
@@ -404,7 +407,7 @@ public final class CordCommand implements TabExecutor {
                         return List.of();
                     }
                     ArrayList<String> completions = new ArrayList<>();
-                    List<String> source = "remove".equals(localTagAction) ? entry.tags() : CordRepository.allowedPublicTags();
+                    List<String> source = "remove".equals(localTagAction) ? entry.tags() : CordRepository.allowedTags();
                     StringUtil.copyPartialMatches(args[args.length - 1], source, completions);
                     return completions;
                 }
@@ -727,7 +730,7 @@ public final class CordCommand implements TabExecutor {
                         () -> CordRepository.move(player, entry, player.getLocation()));
             }
             case "tag" -> {
-                if (!CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true)) {
+                if (!CordRepository.tagsEnabled()) {
                     player.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.tags_disabled"));
                     return;
                 }
@@ -755,16 +758,22 @@ public final class CordCommand implements TabExecutor {
                 for (int index = tagActionIndex + 1; index < args.length; index++) {
                     values.add(args[index]);
                 }
+                if (values.isEmpty()) {
+                    sendEditTagUsage(player, label, adminMode);
+                    return;
+                }
                 if ("add".equals(tagAction)) {
-                    ConfirmationService.request(player,
-                            "tag_add",
-                            LanguagePack.translate("messages.action_tag_add"),
-                            () -> CordRepository.addTags(player, entry, values));
+                    if (!CordRepository.areAllowedTags(values)) {
+                        player.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.invalid_tag"));
+                        return;
+                    }
+                    CordRepository.addTags(player, entry, values);
                 } else if ("remove".equals(tagAction)) {
-                    ConfirmationService.request(player,
-                            "tag_remove",
-                            LanguagePack.translate("messages.action_tag_remove"),
-                            () -> CordRepository.removeTags(player, entry, values));
+                    if (!CordRepository.areAllowedTags(values) || !CordRepository.markerHasAnyTag(entry, values)) {
+                        player.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.invalid_tag"));
+                        return;
+                    }
+                    CordRepository.removeTags(player, entry, values);
                 } else {
                     sendEditTagUsage(player, label, adminMode);
                 }
@@ -1102,8 +1111,9 @@ public final class CordCommand implements TabExecutor {
     private boolean canTeleportAny(Player player) {
         boolean personalEnabled = CordsPlugin.getInstance().getConfig().getBoolean("labels.personal.teleport_enabled", true);
         boolean publicEnabled = CordsPlugin.getInstance().getConfig().getBoolean("labels.public.teleport_enabled", true);
-        return (personalEnabled && PermissionGate.has(player, "cords.teleport.personal"))
-                || (publicEnabled && PermissionGate.has(player, "cords.teleport.public"))
+        boolean bypassDisabled = PermissionGate.has(player, "cords.teleport.bypass_disabled");
+        return ((personalEnabled || bypassDisabled) && PermissionGate.has(player, "cords.teleport.personal"))
+                || ((publicEnabled || bypassDisabled) && PermissionGate.has(player, "cords.teleport.public"))
                 || PermissionGate.has(player, "cords.teleport.owned");
     }
 
@@ -1128,7 +1138,7 @@ public final class CordCommand implements TabExecutor {
     }
 
     private boolean canEditTags(Player player, boolean others) {
-        return CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true)
+        return CordRepository.tagsEnabled()
                 && (others
                 ? player.isOp() || PermissionGate.has(player, "cords.edit.tag.others")
                 : PermissionGate.has(player, "cords.edit.tag"));
@@ -1148,7 +1158,7 @@ public final class CordCommand implements TabExecutor {
     }
 
     private boolean canSearchTag(Player player) {
-        return CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true)
+        return CordRepository.tagsEnabled()
                 && PermissionGate.has(player, "cords.search.tag");
     }
 
@@ -1241,7 +1251,7 @@ public final class CordCommand implements TabExecutor {
                 return;
             }
             for (String tag : queryTags) {
-                if (!CordRepository.allowedPublicTags().contains(tag.toLowerCase(java.util.Locale.ROOT))) {
+                if (!CordRepository.allowedTags().contains(tag.toLowerCase(java.util.Locale.ROOT))) {
                     player.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.invalid_tag"));
                     return;
                 }

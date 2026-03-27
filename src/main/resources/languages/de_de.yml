@@ -105,6 +105,7 @@ commands:
   personal_renamed: 'Markierung "%marker_name%" umbenannt in "%new_name%".'
   public_renamed: 'Offene Markierung "%marker_name%" umbenannt in "%new_name%".'
   marker_moved: 'Markierung "%marker_name%" von %from% nach %to% verschoben.'
+  tags_updated: 'Die Tags der Markierung "%marker_name%" wurden aktualisiert: %tags%.'
   action_open: "eine offene Markierung erstellen"
   action_promote_public: "diese Markierung offentlich machen"
   action_remove: "diese Markierung entfernen"

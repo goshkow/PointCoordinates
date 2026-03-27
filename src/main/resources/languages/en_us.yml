@@ -106,6 +106,7 @@ messages:
   personal_renamed: 'Marker "%marker_name%" renamed to "%new_name%".'
   public_renamed: 'Public marker "%marker_name%" renamed to "%new_name%".'
   marker_moved: 'Marker "%marker_name%" moved from %from% to %to%.'
+  tags_updated: 'Tags for marker "%marker_name%" updated: %tags%.'
   action_open: "create a public marker"
   action_promote_public: "promote this marker to public"
   action_remove: "remove this marker"

@@ -104,6 +104,7 @@ commands:
   personal_renamed: '标记 "%marker_name%" 已重命名为 "%new_name%"。'
   public_renamed: '公开标记 "%marker_name%" 已重命名为 "%new_name%"。'
   marker_moved: '标记 "%marker_name%" 已从 %from% 移动到 %to%。'
+  tags_updated: '标记 "%marker_name%" 的标签已更新：%tags%。'
   action_open: "创建公开标记"
   action_promote_public: "将此标记设为公开"
   action_remove: "删除此标记"

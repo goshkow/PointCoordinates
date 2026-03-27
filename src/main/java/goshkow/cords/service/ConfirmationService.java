@@ -23,7 +23,7 @@ public final class ConfirmationService {
         pending.put(player.getUniqueId(), new PendingConfirmation(actionKey, actionLabel, confirmedAction));
 
         String title = translateOrDefault("messages.confirm_title", "Action cannot be undone");
-        String subtitle = translateOrDefault("messages.confirm_subtitle", "Type \"${confirm}\" in chat. Any other message will cancel it.");
+        String subtitle = translateOrDefault("messages.confirm_subtitle", "Type \"${confirm}\" in chat to confirm.");
         subtitle = subtitle.replace("${action}", actionLabel)
                 .replace("${confirm}", quotedConfirmWord());
 
@@ -33,7 +33,7 @@ public final class ConfirmationService {
         player.sendMessage(CordsPlugin.getPrefix() + ChatColor.RED + warning);
         player.sendMessage(CordsPlugin.getPrefix()
                 + ChatColor.GRAY
-                + translateOrDefault("messages.confirm_hint", "Type \"${confirm}\" in chat. Any other message will cancel it.")
+                + translateOrDefault("messages.confirm_hint", "Type \"${confirm}\" in chat to confirm.")
                 .replace("${confirm}", quotedConfirmWord()));
         if (CordsPlugin.isSoundsEnabled()) {
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);

@@ -67,8 +67,8 @@ public final class MapIntegrationService {
             return;
         }
 
-        syncDynmapScope(markerApi, true, "integrations.maps.dynmap.personal");
-        syncDynmapScope(markerApi, false, "integrations.maps.dynmap.public");
+        syncDynmapScope(markerApi, false, "integrations.maps.dynmap.personal");
+        syncDynmapScope(markerApi, true, "integrations.maps.dynmap.public");
     }
 
     private static void syncDynmapScope(Object markerApi, boolean publicEntry, String configPath) {
@@ -134,8 +134,8 @@ public final class MapIntegrationService {
         }
 
         Object api = optional.get();
-        syncBlueMapScope(api, true, "integrations.maps.bluemap.personal", "PointCoordinates - Personal");
-        syncBlueMapScope(api, false, "integrations.maps.bluemap.public", "PointCoordinates - Public");
+        syncBlueMapScope(api, false, "integrations.maps.bluemap.personal", "PointCoordinates - Personal");
+        syncBlueMapScope(api, true, "integrations.maps.bluemap.public", "PointCoordinates - Public");
     }
 
     private static void syncBlueMapScope(Object api, boolean publicEntry, String configPath, String defaultLabel) {

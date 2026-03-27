@@ -321,7 +321,7 @@ public final class CordRepository {
             return null;
         }
 
-        List<String> allowed = allowedPublicTags();
+        List<String> allowed = allowedTags();
         if (allowed.isEmpty()) {
             actor.sendMessage(CordsPlugin.getPrefix() + LanguagePack.translate("messages.tags_disabled"));
             return null;
@@ -338,6 +338,12 @@ public final class CordRepository {
             }
         }
         CordEntry changed = replaceEntry(entry, entry.withTags(updated));
+        actor.sendMessage(CordsPlugin.getPrefix()
+                + PlaceholderResolver.applyMarker(LanguagePack.translate("messages.tags_updated"), entry.name())
+                .replace("%tags%", renderTags(changed.tags())));
+        if (CordsPlugin.isSoundsEnabled()) {
+            actor.playSound(actor.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
+        }
         CordsPlugin.syncMapIntegrations();
         saveAll();
         return changed;
@@ -357,6 +363,12 @@ public final class CordRepository {
             updated.remove(normalizeTag(tag));
         }
         CordEntry changed = replaceEntry(entry, entry.withTags(updated));
+        actor.sendMessage(CordsPlugin.getPrefix()
+                + PlaceholderResolver.applyMarker(LanguagePack.translate("messages.tags_updated"), entry.name())
+                .replace("%tags%", renderTags(changed.tags())));
+        if (CordsPlugin.isSoundsEnabled()) {
+            actor.playSound(actor.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, 1.0f);
+        }
         CordsPlugin.syncMapIntegrations();
         saveAll();
         return changed;
@@ -402,18 +414,64 @@ public final class CordRepository {
         return results;
     }
 
-    public static List<String> allowedPublicTags() {
-        if (!CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true)) {
+    public static boolean tagsEnabled() {
+        if (CordsPlugin.getInstance().getConfig().contains("labels.tags.enabled")) {
+            return CordsPlugin.getInstance().getConfig().getBoolean("labels.tags.enabled", true);
+        }
+        return CordsPlugin.getInstance().getConfig().getBoolean("labels.public.tags.enabled", true);
+    }
+
+    public static List<String> allowedTags() {
+        if (!tagsEnabled()) {
             return List.of();
         }
         ArrayList<String> tags = new ArrayList<>();
-        for (String tag : CordsPlugin.getInstance().getConfig().getStringList("labels.public.tags.allowed")) {
+        String path = CordsPlugin.getInstance().getConfig().contains("labels.tags.allowed")
+                ? "labels.tags.allowed"
+                : "labels.public.tags.allowed";
+        for (String tag : CordsPlugin.getInstance().getConfig().getStringList(path)) {
             String normalized = normalizeTag(tag);
             if (!normalized.isBlank() && !tags.contains(normalized)) {
                 tags.add(normalized);
             }
         }
         return tags;
+    }
+
+    public static List<String> allowedPublicTags() {
+        return allowedTags();
+    }
+
+    public static boolean areAllowedTags(List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return false;
+        }
+
+        List<String> allowed = allowedTags();
+        if (allowed.isEmpty()) {
+            return false;
+        }
+
+        for (String tag : tags) {
+            String normalized = normalizeTag(tag);
+            if (normalized.isBlank() || !allowed.contains(normalized)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean markerHasAnyTag(CordEntry entry, List<String> tags) {
+        if (entry == null || tags == null || tags.isEmpty()) {
+            return false;
+        }
+
+        for (String tag : tags) {
+            if (entry.tags().contains(normalizeTag(tag))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static CordEntry findVisible(UUID viewerId, String inputName) {
@@ -811,5 +869,20 @@ public final class CordRepository {
             return "";
         }
         return tag.trim().toLowerCase(Locale.ROOT).replace(' ', '_');
+    }
+
+    private static String renderTags(List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return "-";
+        }
+
+        StringBuilder rendered = new StringBuilder();
+        for (String tag : tags) {
+            if (!rendered.isEmpty()) {
+                rendered.append(" ");
+            }
+            rendered.append("[").append(tag).append("]");
+        }
+        return rendered.toString();
     }
 }

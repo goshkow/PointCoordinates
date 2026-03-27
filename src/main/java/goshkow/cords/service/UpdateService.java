@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,29 +30,27 @@ public final class UpdateService {
     private static final String MODRINTH_RELEASES_PAGE = "https://modrinth.com/plugin/pointcoordinates/versions";
     private static final String GITHUB_RELEASES_PAGE = "https://github.com/goshkow/PointCoordinates/releases";
 
-    private static final Pattern GITHUB_RELEASE_PATTERN = Pattern.compile(
-            "\"tag_name\"\\s*:\\s*\"([^\"]+)\".*?\"html_url\"\\s*:\\s*\"([^\"]+)\".*?\"draft\"\\s*:\\s*(true|false).*?\"prerelease\"\\s*:\\s*(true|false)",
-            Pattern.DOTALL
-    );
+    private static final Pattern GITHUB_STRING_FIELD = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
+    private static final Pattern GITHUB_BOOLEAN_FIELD = Pattern.compile("\"([^\"]+)\"\\s*:\\s*(true|false)");
     private static final Pattern MODRINTH_RELEASE_PATTERN = Pattern.compile(
             "\"version_number\"\\s*:\\s*\"([^\"]+)\".*?\"version_type\"\\s*:\\s*\"([^\"]+)\"",
             Pattern.DOTALL
     );
 
-    private static volatile UpdateInfo latestStableUpdate;
+    private static volatile UpdateSnapshot latestSnapshot;
 
     private UpdateService() {
     }
 
     public static void checkAsync() {
         if (!CordsPlugin.getInstance().getConfig().getBoolean("updates.notification", true)) {
-            latestStableUpdate = null;
+            latestSnapshot = null;
             return;
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(CordsPlugin.getInstance(), () -> {
             try {
-                latestStableUpdate = fetchLatestStableUpdate();
+                latestSnapshot = fetchLatestSnapshot();
             } catch (Exception exception) {
                 if (CordsPlugin.isDebugEnabled()) {
                     CordsPlugin.getInstance().getLogger().warning("Failed to check for PointCoordinates updates: " + exception.getMessage());
@@ -73,18 +70,28 @@ public final class UpdateService {
             return;
         }
 
-        UpdateInfo update = latestStableUpdate;
-        if (update == null) {
+        UpdateSnapshot snapshot = latestSnapshot;
+        if (snapshot == null) {
             return;
         }
 
+        List<UpdateInfo> relevant = snapshot.relevantUpdates();
+        if (relevant.isEmpty()) {
+            return;
+        }
+
+        SemanticVersion version = relevant.get(0).version();
         player.sendMessage(ChatColor.AQUA + "[PointCoordinates] " + ChatColor.WHITE
-                + "A new version is available: " + ChatColor.AQUA + update.version().raw());
+                + "A new version is available: " + ChatColor.AQUA + version.raw());
 
         TextComponent root = new TextComponent(ChatColor.GRAY + "Download: ");
-        root.addExtra(linkButton("Modrinth", MODRINTH_RELEASES_PAGE));
-        root.addExtra(new TextComponent(ChatColor.DARK_GRAY + " | "));
-        root.addExtra(linkButton("GitHub", GITHUB_RELEASES_PAGE));
+        for (int index = 0; index < relevant.size(); index++) {
+            UpdateInfo update = relevant.get(index);
+            root.addExtra(linkButton(update.source(), update.url()));
+            if (index + 1 < relevant.size()) {
+                root.addExtra(new TextComponent(ChatColor.DARK_GRAY + " | "));
+            }
+        }
         player.spigot().sendMessage(root);
     }
 
@@ -102,40 +109,44 @@ public final class UpdateService {
         return player.isOp() || PermissionGate.has(player, "cords.reload");
     }
 
-    private static UpdateInfo fetchLatestStableUpdate() throws IOException, InterruptedException {
+    private static UpdateSnapshot fetchLatestSnapshot() throws IOException, InterruptedException {
         SemanticVersion current = SemanticVersion.parse(CordsPlugin.getInstance().getDescription().getVersion());
-        List<UpdateInfo> candidates = new ArrayList<>();
-        candidates.addAll(fetchGitHubStableReleases());
-        candidates.addAll(fetchModrinthStableReleases());
-
-        return candidates.stream()
-                .filter(Objects::nonNull)
-                .filter(update -> update.version().compareTo(current) > 0)
-                .max(Comparator.comparing(UpdateInfo::version))
-                .orElse(null);
+        UpdateInfo github = fetchGitHubStableRelease();
+        UpdateInfo modrinth = fetchModrinthStableRelease();
+        return new UpdateSnapshot(current, github, modrinth);
     }
 
-    private static List<UpdateInfo> fetchGitHubStableReleases() throws IOException, InterruptedException {
+    private static UpdateInfo fetchGitHubStableRelease() throws IOException, InterruptedException {
         String body = fetch(GITHUB_RELEASES_API);
-        ArrayList<UpdateInfo> updates = new ArrayList<>();
-        Matcher matcher = GITHUB_RELEASE_PATTERN.matcher(body);
-        while (matcher.find()) {
-            String rawVersion = matcher.group(1);
-            String htmlUrl = matcher.group(2);
-            boolean draft = Boolean.parseBoolean(matcher.group(3));
-            boolean prerelease = Boolean.parseBoolean(matcher.group(4));
-            SemanticVersion parsed = SemanticVersion.parse(rawVersion);
-            if (draft || prerelease || !parsed.stable()) {
+        ArrayList<String> objects = splitTopLevelObjects(body);
+        UpdateInfo latest = null;
+        for (String object : objects) {
+            String releaseName = extractStringField(object, "name");
+            String tagName = extractStringField(object, "tag_name");
+            boolean draft = extractBooleanField(object, "draft");
+            boolean prerelease = extractBooleanField(object, "prerelease");
+            if (draft || prerelease) {
                 continue;
             }
-            updates.add(new UpdateInfo(parsed, htmlUrl, "GitHub"));
+
+            SemanticVersion parsedFromName = SemanticVersion.parse(releaseName);
+            SemanticVersion parsedFromTag = SemanticVersion.parse(tagName);
+            SemanticVersion parsed = parsedFromName.stable() ? parsedFromName : parsedFromTag;
+            if (!parsed.stable()) {
+                continue;
+            }
+
+            UpdateInfo candidate = new UpdateInfo(parsed, GITHUB_RELEASES_PAGE, "GitHub");
+            if (latest == null || candidate.version().compareTo(latest.version()) > 0) {
+                latest = candidate;
+            }
         }
-        return updates;
+        return latest;
     }
 
-    private static List<UpdateInfo> fetchModrinthStableReleases() throws IOException, InterruptedException {
+    private static UpdateInfo fetchModrinthStableRelease() throws IOException, InterruptedException {
         String body = fetch(MODRINTH_VERSIONS_API);
-        ArrayList<UpdateInfo> updates = new ArrayList<>();
+        UpdateInfo latest = null;
         Matcher matcher = MODRINTH_RELEASE_PATTERN.matcher(body);
         while (matcher.find()) {
             String rawVersion = matcher.group(1);
@@ -144,9 +155,12 @@ public final class UpdateService {
             if (!"release".equalsIgnoreCase(versionType) || !parsed.stable()) {
                 continue;
             }
-            updates.add(new UpdateInfo(parsed, MODRINTH_RELEASES_PAGE, "Modrinth"));
+            UpdateInfo candidate = new UpdateInfo(parsed, MODRINTH_RELEASES_PAGE, "Modrinth");
+            if (latest == null || candidate.version().compareTo(latest.version()) > 0) {
+                latest = candidate;
+            }
         }
-        return updates;
+        return latest;
     }
 
     private static String fetch(String url) throws IOException, InterruptedException {
@@ -162,6 +176,97 @@ public final class UpdateService {
     }
 
     private record UpdateInfo(SemanticVersion version, String url, String source) {
+    }
+
+    private record UpdateSnapshot(SemanticVersion current, UpdateInfo github, UpdateInfo modrinth) {
+        List<UpdateInfo> relevantUpdates() {
+            boolean githubNewer = github != null && github.version().compareTo(current) > 0;
+            boolean modrinthNewer = modrinth != null && modrinth.version().compareTo(current) > 0;
+
+            if (!githubNewer && !modrinthNewer) {
+                return List.of();
+            }
+            if (githubNewer && !modrinthNewer) {
+                return List.of(github);
+            }
+            if (!githubNewer) {
+                return List.of(modrinth);
+            }
+
+            int compare = github.version().compareTo(modrinth.version());
+            if (compare > 0) {
+                return List.of(github);
+            }
+            if (compare < 0) {
+                return List.of(modrinth);
+            }
+            return List.of(modrinth, github);
+        }
+    }
+
+    private static ArrayList<String> splitTopLevelObjects(String jsonArray) {
+        ArrayList<String> objects = new ArrayList<>();
+        if (jsonArray == null || jsonArray.isBlank()) {
+            return objects;
+        }
+
+        int depth = 0;
+        int start = -1;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int index = 0; index < jsonArray.length(); index++) {
+            char current = jsonArray.charAt(index);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (current == '"') {
+                inString = true;
+                continue;
+            }
+            if (current == '{') {
+                if (depth == 0) {
+                    start = index;
+                }
+                depth++;
+                continue;
+            }
+            if (current == '}') {
+                depth--;
+                if (depth == 0 && start >= 0) {
+                    objects.add(jsonArray.substring(start, index + 1));
+                    start = -1;
+                }
+            }
+        }
+        return objects;
+    }
+
+    private static String extractStringField(String jsonObject, String field) {
+        Matcher matcher = GITHUB_STRING_FIELD.matcher(jsonObject);
+        while (matcher.find()) {
+            if (field.equals(matcher.group(1))) {
+                return matcher.group(2);
+            }
+        }
+        return "";
+    }
+
+    private static boolean extractBooleanField(String jsonObject, String field) {
+        Matcher matcher = GITHUB_BOOLEAN_FIELD.matcher(jsonObject);
+        while (matcher.find()) {
+            if (field.equals(matcher.group(1))) {
+                return Boolean.parseBoolean(matcher.group(2));
+            }
+        }
+        return false;
     }
 
     static final class SemanticVersion implements Comparable<SemanticVersion> {

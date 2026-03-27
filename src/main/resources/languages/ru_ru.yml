@@ -104,6 +104,7 @@ commands:
   personal_renamed: 'Метка "%marker_name%" переименована в "%new_name%".'
   public_renamed: 'Открытая метка "%marker_name%" переименована в "%new_name%".'
   marker_moved: 'Метка "%marker_name%" перенесена с %from% на %to%.'
+  tags_updated: 'Теги у метки "%marker_name%" обновлены: %tags%.'
   action_open: "создать открытую метку"
   action_promote_public: "сделать эту метку открытой"
   action_remove: "удалить эту метку"
